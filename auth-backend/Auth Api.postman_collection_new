@@ -1,0 +1,292 @@
+{
+	"info": {
+		"_postman_id": "19361362-c9c7-4344-b8d5-344235a4c025",
+		"name": "Auth Api",
+		"description": "# Auth API – Express, JWT & MySQL\n\nThis Postman collection documents a complete authentication and user-profile management system built with **Express.js**, **JWT**, and **MySQL**.  \n\n---\n\n## Key Features\n\n### Authentication & Authorization\n\n- User registration with secure password hashing using **bcrypt**\n    \n- User login with **JWT-based access tokens**\n    \n- **Protected routes** secured using JWT authorization middleware\n    \n- HTTP-only **refresh token support** for session continuity\n    \n- Secure logout by revoking refresh tokens\n    \n\n---\n\n### Password & Account Security\n\n- Passwords are **never stored in plain text**\n    \n- All passwords are hashed before being persisted to the database\n    \n- Secure **forgot password flow** with cryptographically generated reset tokens\n    \n- Reset tokens are:\n    \n    - Hashed before storing in the database\n        \n    - Time-limited (expiry enforced)\n        \n    - Single-use only\n        \n- Password reset validates both token authenticity and expiry\n    \n\n---\n\n### User Profile Management\n\n- Authenticated users can update their profile information\n    \n- Profile update is restricted to allowed fields (name only)\n    \n- All profile operations require valid authentication\n    \n\n---\n\n### Token Management\n\n- Short-lived **access tokens** issued on successful login\n    \n- Refresh tokens stored securely and validated against the database\n    \n- Access tokens are regenerated using refresh tokens without re-authentication\n    \n- Logout invalidates refresh tokens and terminates active sessions\n    \n\n---\n\n### Error Handling & API Design\n\n- Centralized error handling middleware\n    \n- Consistent JSON response format for both success and error cases\n    \n- Clear HTTP status codes for all API responses\n    \n- Operational errors are safely exposed without leaking sensitive details\n    \n\n---\n\n## Authentication Flow\n\n1. User registers with email and password\n    \n2. Password is hashed and stored securely\n    \n3. User logs in with valid credentials\n    \n4. Backend issues:\n    \n    - Access token (JWT)\n        \n    - Refresh token (stored securely and managed via cookies)\n        \n5. Access token is used to access protected routes\n    \n6. Refresh token is used to obtain new access tokens when expired\n    \n7. Logout revokes refresh token and ends the session\n    \n\n---\n\n## Postman Environment Configuration\n\nThis collection uses Postman environment variables to streamline testing and reuse tokens automatically.\n\n### Environment Variables Used\n\n- `base_url` – Base API URL (e.g. `http://localhost:3000/api`)\n    \n- `accessToken` – JWT access token (automatically saved after login)\n    \n- `reset_token` – Password reset token (saved during forgot-password flow)\n    \n\nThese variables allow seamless execution of the full authentication lifecycle without manual token copying.\n\n---\n\n## Recommended Usage Flow\n\nFor correct testing and demonstration, APIs should be executed in the following order:\n\n1. Register User\n    \n2. Login User\n    \n3. Access Protected Routes\n    \n4. Update User Profile\n    \n5. Forgot Password\n    \n6. Reset Password\n    \n7. Login again with new password\n    \n8. Logout\n    \n9. Verify refresh token invalidation\n    \n\n---\n\n## Notes\n\n- Protected endpoints require the `Authorization: Bearer` header\n    \n- Refresh tokens are handled automatically by the client (Postman/browser)\n    \n- Refresh and logout operations require an active refresh token\n    \n- Refresh attempts after logout are expected to fail (by design)\n    \n\n---\n\nThis collection serves as both **testing documentation** and a **reference implementation** for building secure authentication systems using Node.js and relational databases.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "51166924"
+	},
+	"item": [
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "Register User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"name\": \"Dhruv\",\r\n  \"email\": \"dhruv@test.com\",\r\n  \"password\": \"123456\"\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/register",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"register"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Login User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.environment.set(\"accessToken\", pm.response.json().data.accessToken);\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"email\": \"dhruv@test.com\",\r\n  \"password\": \"newPassword123\"\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Forgot Password",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.environment.set(\"reset_token\", pm.response.json().data.resetToken);\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"email\": \"dhruv@test.com\"\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/forgot-password",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"forgot-password"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Reset Password",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"token\": \"{{reset_token}}\",\r\n  \"newpassword\": \"newPassword123\"\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/reset-password",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"reset-password"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Refresh Access Token",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/refresh",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"refresh"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Logout",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/auth/logout",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"logout"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Protected",
+			"item": [
+				{
+					"name": "Get Profile (Protected)",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/user/profile",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"user",
+								"profile"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update username (Protected)",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}",
+								"type": "text"
+							},
+							{
+								"key": "content-type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{ \r\n    \"name\": \"Dhruv jain\"\r\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/user/profile",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"user",
+								"profile"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}
