@@ -1,6 +1,8 @@
 const {
   updateUserRole,
   updateUserAccountStatusService,
+  upsertRoleService,
+  deleteRoleService
 } = require("../services/adminServices");
 const { sendSuccess } = require("../common/response");
 
@@ -45,7 +47,42 @@ const updateUserAccountStatusController = async (req, res, next) => {
   }
 };
 
+const upsertRoleController = async (req, res, next) => {
+  try {
+    const result = await upsertRoleService(req.body);
+
+    return sendSuccess(
+      res,
+      `Role ${result.action} successfully`,
+      result,
+      result.action === "created" ? 201 : 200
+    );
+  } catch (err) {
+    next(err);
+  }
+};
+
+const deleteRoleController = async (req, res, next) => {
+  try {
+    const roleId = Number(req.params.id);
+
+    const result = await deleteRoleService(roleId);
+
+    return sendSuccess(
+      res,
+      "Role deleted successfully",
+      result,
+      200
+    );
+  } catch (err) {
+    next(err);
+  }
+};
+
+
 module.exports = {
   updateUserRoleController,
   updateUserAccountStatusController,
+  upsertRoleController,
+  deleteRoleController,
 };

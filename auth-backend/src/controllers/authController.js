@@ -12,9 +12,10 @@ const buildAssetUrl = require("../config/app");
 const registerController = async (req, res, next) => {
   try {
     const data = await registerService(req.body);
+
       const responseData = {
       ...data,
-      avatar: buildAssetUrl(data.user.avatar)
+      avatar: buildAssetUrl({avatar:data.avatar, id:data.id, name:data.name, email:data.email})
     };
     return sendSuccess(res, "User registered successfully", responseData, 201);
   } catch (err) {
@@ -29,7 +30,7 @@ const loginController = async (req, res, next) => {
       ...data,
       user: {
         ...data.user,
-        avatar: buildAssetUrl(data.user.avatar)
+        avatar: buildAssetUrl({avatar:data.user.avatar, id:data.user.id, name:data.user.name, email:data.user.email})
       }
     };
 

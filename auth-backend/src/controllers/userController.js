@@ -1,7 +1,5 @@
 const {sendSuccess} = require("../common/response");
-const { get } = require("../routes");
 const {getAllUserService,updateUserService, removeUserAvatarService, getProfileService} = require("../services/userServices");
-const AppError = require("../utils/appError");
 const buildAssetUrl = require("../config/app");
 
 const getUsercontroller = async (req, res, next) => {
@@ -18,7 +16,7 @@ const getProfileController = async (req, res) => {
      
        const responseData = {
       ...data,
-      avatar: buildAssetUrl(data.avatar)
+      avatar: buildAssetUrl({avatar:data.avatar, id:data.id, name:data.name, email:data.email})
     }; 
       
      return sendSuccess(res, "Profile fetched successfully", responseData, 200);
@@ -33,7 +31,7 @@ const updateProfileController = async (req, res, next) => {
       name: req.body.name,
       email: req.body.email,
       avatar: req.file
-        ? `/uploads/avatars/${req.file.filename}`
+        ? `${req.file.filename}`
         : null,
     };
 
@@ -41,7 +39,7 @@ const updateProfileController = async (req, res, next) => {
 
     const responseData = {
       ...data,
-      avatar: buildAssetUrl(data.avatar)
+      avatar: buildAssetUrl({avatar:data.avatar, id:data.id, name:data.name, email:data.email})
     }; 
 
     return sendSuccess(
@@ -59,9 +57,13 @@ const removeUserAvatarController = async (req, res, next) => {
   try {
     const userId = req.user.userId;
 
-    await removeUserAvatarService(userId);
+   const data =  await removeUserAvatarService(userId);
+    const responseData = {
+      ...data,
+      avatar: buildAssetUrl({avatar:data.avatar, id:data.id, name:data.name, email:data.email})
+    };
 
-    return sendSuccess(res, "Avatar removed successfully", null, 200);
+    return sendSuccess(res, "Avatar removed successfully", responseData, 200);
   } catch (err) {
     next(err);
   }

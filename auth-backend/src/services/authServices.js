@@ -3,7 +3,6 @@ const { hashPassword, comparePassword } = require("../utils/hash");
 const { signToken } = require("../utils/jwt");
 const AppError = require("../utils/appError");
 const crypto = require("crypto");
-const generateDefaultAvatar = require("../utils/generateDefaultAvatar");
 
 
 const registerService = async (payload) => {
@@ -27,10 +26,12 @@ const registerService = async (payload) => {
 
   const roleName = count === 0 ? 'admin' : 'developer';
 
+
   const [roleRows] = await pool.query(
     'SELECT id FROM roles WHERE name = ?',
     [roleName]
   );
+  console.log(roleRows);
 
   if (!roleRows.length) {
     throw new AppError('Role not found', 500);
@@ -46,24 +47,12 @@ const registerService = async (payload) => {
 
   const userId = result.insertId;
 
-  const avatarPath = await generateDefaultAvatar({
-    userId,
-    name
-  });
-
-  // 6️⃣ Save avatar path in DB
-  await pool.query(
-    'UPDATE users SET avatar = ? WHERE id = ?',
-    [avatarPath, userId]
-  );
-
-
   return {
     id: userId,
     name,
     email,
     role: roleName,
-    avatar: avatarPath
+    avatar: null
   };
 };
 

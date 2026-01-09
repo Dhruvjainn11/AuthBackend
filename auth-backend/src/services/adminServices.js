@@ -93,7 +93,107 @@ const updateUserAccountStatusService = async ({
     [isActive, accountStatus, deletedAt, targetUserId]
   );
 };
+
+const upsertRoleService = async (payload) => {
+  const { id, name, description, is_active } = payload;
+
+  // UPDATE ROLE
+
+  if (id) {
+    const [result] = await pool.query(
+      `
+      UPDATE roles
+      SET
+        name = COALESCE(?, name),
+        description = COALESCE(?, description),
+        is_active = COALESCE(?, is_active)
+      WHERE id = ?
+      `,
+      [name, description, is_active, id]
+    );
+
+    if (result.affectedRows === 0) {
+      throw new AppError("Role not found", 404);
+    }
+
+    return {
+      id,
+      action: "updated"
+    };
+  }
+
+  // --------------------
+  // CREATE ROLE
+  // --------------------
+  const [existing] = await pool.query(
+    "SELECT id FROM roles WHERE name = ? LIMIT 1",
+    [name]
+  );
+
+  if (existing.length > 0) {
+    throw new AppError("Role already exists", 409);
+  }
+
+  const [result] = await pool.query(
+    `
+    INSERT INTO roles (name, description, is_active)
+    VALUES (?, ?, ?)
+    `,
+    [name, description || null, is_active ?? 1]
+  );
+
+  return {
+    id: result.insertId,
+    action: "created"
+  };
+};
+
+
+const deleteRoleService = async (roleId) => {
+  // 1️⃣ Check role exists
+  const [[role]] = await pool.query(
+    "SELECT id, name FROM roles WHERE id = ? LIMIT 1",
+    [roleId]
+  );
+
+  if (!role) {
+    throw new AppError("Role not found", 404);
+  }
+
+  // 2️⃣ Protect system roles
+  if (role.name === "admin") {
+    throw new AppError("Admin role cannot be deleted", 403);
+  }
+
+  // 3️⃣ Check if role is assigned to users
+  const [[usage]] = await pool.query(
+    "SELECT COUNT(*) AS count FROM users WHERE role_id = ?",
+    [roleId]
+  );
+
+  if (usage.count > 0) {
+    throw new AppError(
+      "Role is assigned to users and cannot be deleted",
+      409
+    );
+  }
+
+  // 4️⃣ Soft delete (deactivate)
+  await pool.query(
+    "UPDATE roles SET is_active = false WHERE id = ?",
+    [roleId]
+  );
+
+  return {
+    id: roleId,
+    action: "deleted"
+  };
+};
+
+
 module.exports = {
   updateUserRole,
   updateUserAccountStatusService,
+  upsertRoleService,
+  deleteRoleService,
 };

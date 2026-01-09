@@ -164,7 +164,14 @@ const removeUserAvatarService = async (userId) => {
 
   // 1️ Get existing avatar
   const [rows] = await pool.query(
-    'SELECT avatar FROM users WHERE id = ?',
+   `SELECT
+      u.id,
+      u.name,
+      u.email,
+      u.avatar,
+      u.account_status     
+    FROM users u
+    WHERE u.id = ?`,
     [userId]
   );
 
@@ -172,25 +179,52 @@ const removeUserAvatarService = async (userId) => {
     throw new AppError('User not found', 404);
   }
 
-  const avatar = rows[0].avatar;
-
+  const userResult = rows[0];
+  
   // 2️ If no avatar, exit silently (idempotent)
-  if (!avatar) {
-    return;
+  if (!userResult.avatar) {
+    return userResult;
   }
 
   // 3️ Delete file from disk
-  const avatarPath = path.join(__dirname, '../../', avatar);
-
+  const avatarPath = path.join(__dirname, '../../', userResult.avatar);
+  
   if (fs.existsSync(avatarPath)) {
     fs.unlinkSync(avatarPath);
   }
 
   // 4️ Update DB
-  await pool.query(
+  const [result] = await pool.query(
     'UPDATE users SET avatar = NULL WHERE id = ?',
     [userId]
   );
+  
+  if (result.affectedRows === 0) {
+    throw new AppError('Failed to remove avatar', 500);
+  }
+  const [userRow] = await pool.query(
+    ` SELECT
+      u.id,
+      u.name,
+      u.email,
+      u.avatar,
+      u.account_status
+    FROM users u
+    WHERE u.id = ?
+    `,
+    [userId]
+  );
+
+  const user = userRow[0];
+ console.log(user);
+  
+  return{
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    status: user.account_status,
+    avatar: user.avatar
+  }
 };
 
 module.exports = {
